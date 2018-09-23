@@ -17,7 +17,8 @@
 // - - - - - - - - - - - - - - - - - - - -
 
 class MastodonClient {
-	private $instance_url = NULL;
+	private $error = FALSE;
+	private $instance_baseurl = NULL;
 
 	public function __construct ()
 	{
@@ -26,9 +27,9 @@ class MastodonClient {
 		require_once('settings.php');
 
 		// ----- ●インスタンス URL のバリデーション -----
-		$this->instance_url = $this->validate_instance_url(INSTANCE_URL);
-		if ( $this->instance_url === FALSE ) {
-
+		$this->instance_baseurl = $this->validate_instance_url(INSTANCE_URL);
+		if ( $this->instance_baseurl === FALSE ) {
+			$error = TRUE;
 		}
 	}
 
