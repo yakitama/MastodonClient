@@ -19,6 +19,7 @@
 class MastodonClient {
 	private $error = FALSE;
 	private $instance_baseurl = NULL;
+	private $instance_apiurl = array();
 
 	public function __construct ()
 	{
@@ -64,11 +65,11 @@ class MastodonClient {
 				// no operation
 			}
 
-			// 末尾が スラッシュ で終わっていること。そうでないなら自動補完する。
+			// 末尾が スラッシュ で終わっていないこと。終わっているなら削除する。
 			$instance_url_slashdetect = mb_strpos($instance_url_novalidate, '/', mb_strlen($instance_url_novalidate)-1);
-			if ( $instance_url_slashdetect === FALSE ) {
-				// 含まれていない → 自動補完します
-				$instance_url_novalidate = $instance_url_novalidate.'/';
+			if ( $instance_url_slashdetect === 0 ) {
+				// 含まれている → スラッシュを削除する
+				$instance_url_novalidate = mb_substr($instance_url_novalidate, 0, mb_strlen($instance_url_novalidate)-1);
 			} 
 		}
 		catch (Exeption $e) {
