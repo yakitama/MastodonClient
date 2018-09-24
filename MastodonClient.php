@@ -32,6 +32,10 @@ class MastodonClient {
 		if ( $this->instance_baseurl === FALSE ) {
 			$error = TRUE;
 		}
+
+		// ----- ●API URL を作成する -----
+		require_once('api_defines.php');
+		$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 	}
 
 
