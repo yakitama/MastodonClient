@@ -32,9 +32,6 @@ class MastodonClient {
 
 	public function __construct ()
 	{
-		// ----- ●API URL を作成する -----
-		require_once('api_defines.php');
-		$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 	}
 
 	// function		init
@@ -60,6 +57,10 @@ class MastodonClient {
 			if ( $this->validate_tokens($this->api_client_key, $this->api_client_secret, $this->api_access_token) === FALSE ) {
 				throw new Exception('初期設定に失敗しました。');
 			}
+			
+			// ----- ●API URL を作成する -----
+			require_once('api_defines.php');
+			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 		}
 		catch (Exception $e) {
 			fprintf(STDERR, $e->getMessage().PHP_EOL);
