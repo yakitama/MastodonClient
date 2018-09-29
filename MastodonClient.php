@@ -99,7 +99,6 @@ class MastodonClient {
 			}
 
 			// cURL による POST リクエスト発行
-			echo $this->instance_apiurl['statuses'].PHP_EOL;
 			$curl_instance = curl_init($this->instance_apiurl['statuses']);
 			curl_setopt($curl_instance, CURLOPT_POST, TRUE);
 			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
