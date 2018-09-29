@@ -102,7 +102,7 @@ class MastodonClient {
 
 			// 末尾が スラッシュ で終わっていないこと。終わっているなら削除する。
 			$instance_url_slashdetect = mb_strpos($instance_url_novalidate, '/', mb_strlen($instance_url_novalidate)-1);
-			if ( $instance_url_slashdetect === 0 ) {
+			if ( $instance_url_slashdetect === (mb_strlen($instance_url_novalidate)-1) ) {
 				// 含まれている → スラッシュを削除する
 				$instance_url_novalidate = mb_substr($instance_url_novalidate, 0, mb_strlen($instance_url_novalidate)-1);
 			} 
