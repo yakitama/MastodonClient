@@ -17,6 +17,12 @@
 // - - - - - - - - - - - - - - - - - - - -
 
 class MastodonClient {
+	// const VISIBILITY_DEFAULT = 0;
+	const VISIBILITY_PUBLIC = 'public';
+	const VISIBILITY_UNLISTED = 'unlisted';
+	const VISIBILITY_PRIVATE = 'private';
+	const VISIBILITY_DIRECT = 'direct';
+
 	private $error = FALSE;
 	private $instance_baseurl = NULL;
 	private $instance_apiurl = array();
@@ -63,6 +69,50 @@ class MastodonClient {
 		}
 
 		return TRUE;
+	}
+
+	// function		post_statuses
+	// 概要			トゥートします。
+	// 引数			$visibility					公開範囲を指定します。VISIBILITY_ なんちゃらを使ってください。
+	// 				$status						本文を指定します。
+	// 				$spoiler_text				警告文を指定します。省略できます。この引数に1文字以上の文字列を指定すると、自動で CW フラグが設定されます。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、作成したステータスの URL を返します。
+	// 制約			
+	public function post_statuses ( $visibility, string $status, string $spoiler_text = "" )
+	{
+		try {
+			// visibility のエラーチェック
+			if ( $this->validate_visibility($visibility) === FALSE ) {
+				throw new Exception('公開範囲の設定に誤りがあります。');
+			}
+			// 投稿テキストのエラーチェック
+			if ( mb_strlen($status) == 0 ) {
+				throw new Exception('投稿テキストに誤りがあります。');
+			}
+
+			// ペイロードの作成
+			$payload = array();
+			$payload['status'] = $status;
+			$payload['visibility'] = $visibility;
+			if ( mb_strlen($spoiler_text) > 0 ) {
+				$payload['spoiler_text'] = $spoiler_text;
+			}
+
+			// cURL による POST リクエスト発行
+			$curl_instance = curl_init($this->instance_apiurl['statuses']);
+			curl_setopt($curl_instance, CURLOPT_POST, TRUE);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_POSTFIELDS, $payload);
+			if ( curl_exec($curl_instance) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);	
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+		
 	}
 
 	// function		validate_instance_url
@@ -135,6 +185,30 @@ class MastodonClient {
 			}
 			if ( strlen($access_token) == 0 ) {
 				throw new Exception('ACCESS_TOKEN の指定が異常値です。');
+			}
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	// function		validate_visibility
+	// 概要			公開範囲の設定が正しいか検査します。
+	// 引数			$visibility					検査したい値を指定します。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、TRUE を返します。
+	// 制約			
+	private function validate_visibility ( $visibility )
+	{
+		try {
+			if ( //($visibility !== $this::VISIBILITY_DEFAULT) &&
+			     ($visibility !== $this::VISIBILITY_PUBLIC) &&
+			     ($visibility !== $this::VISIBILITY_UNLISTED) &&
+			     ($visibility !== $this::VISIBILITY_PRIVATE) &&
+			     ($visibility !== $this::VISIBILITY_DIRECT) ) {
+				throw new Exception('公開範囲に指定された値は範囲外です。');
 			}
 		}
 		catch (Exception $e) {
