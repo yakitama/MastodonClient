@@ -90,17 +90,21 @@ class MastodonClient {
 			}
 
 			// ペイロードの作成
-			$payload = array('"status":"'.$status.'"', '"visibility":"'.$visibility.'"');
+			$payload = array();
+			$payload['status'] = $status;
+			$payload['visibility'] = $visibility;
 			if ( mb_strlen($spoiler_text) > 0 ) {
-				$payload[] = '"spoiler_text":"'.$spoiler_text.'"';
+				$payload['spoiler_text'] = $spoiler_text;
 			}
 
 			// cURL による POST リクエスト発行
+			echo $this->instance_apiurl['statuses'].PHP_EOL;
 			$curl_instance = curl_init($this->instance_apiurl['statuses']);
-			curl_setopt($curl_instance , CURLOPT_POST, TRUE);
+			curl_setopt($curl_instance, CURLOPT_POST, TRUE);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
 			curl_setopt($curl_instance, CURLOPT_POSTFIELDS, $payload);
 			if ( curl_exec($curl_instance) === FALSE ) {
-				throw new Exception('POST リクエストに失敗しました。');
+				throw new Exception(curl_error($curl_instance));
 			}
 			curl_close($curl_instance);	
 		}
