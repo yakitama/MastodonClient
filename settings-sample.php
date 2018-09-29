@@ -16,3 +16,6 @@
 
 // インスタンスの URL を指定する。
 define("INSTANCE_URL", "https://mstdn.example.com/");
+define("CLIENT_KEY", "replace_your_client_key_here");
+define("CLIENT_SECRET", "replace_your_client_secret_here");
+define("ACCESS_TOKEN", "replace_your_access_token_here");
