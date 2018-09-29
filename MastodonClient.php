@@ -107,7 +107,7 @@ class MastodonClient {
 				$instance_url_novalidate = mb_substr($instance_url_novalidate, 0, mb_strlen($instance_url_novalidate)-1);
 			} 
 		}
-		catch (Exeption $e) {
+		catch (Exception $e) {
 			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
 			return FALSE;
 		}
