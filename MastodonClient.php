@@ -80,13 +80,24 @@ class MastodonClient {
 			}
 
 			// 先頭が https:// または http:// で始まっていること。そうでないなら https:// を自動補完する。
-			if ( (mb_strpos($instance_url_novalidate, 'https://') !== 0) || (mb_strpos($instance_url_novalidate, 'http://') !== 0) ) {
-				// 先頭じゃないところに含まれている → カバー不能な異常値です
-				throw new Exception('INSTANCE_URL の指定が異常値です。');
+			if ( (mb_strpos($instance_url_novalidate, 'https://') === 0) || (mb_strpos($instance_url_novalidate, 'http://') === 0) ) {
+				// 先頭に含まれている → 正常値
+				// no operation
 			}
-			if ( (mb_strpos($instance_url_novalidate, 'https://') === FALSE) && (mb_strpos($instance_url_novalidate, 'http://') === FALSE) ) {
+			else if ( (mb_strpos($instance_url_novalidate, 'https://') === FALSE) && (mb_strpos($instance_url_novalidate, 'http://') === FALSE) ) {
 				// 含まれていない → 自動補完します
 				$instance_url_novalidate = 'https://'.$instance_url_novalidate;
+			}
+			else if ( mb_strpos($instance_url_novalidate, 'https://') !== 0 ) {
+				// 先頭じゃないところに https:// が含まれている → カバー不能な異常値です
+				throw new Exception('INSTANCE_URL の指定が異常値です。');
+			}
+			else if ( mb_strpos($instance_url_novalidate, 'http://') !== 0 ) {
+				// 先頭じゃないところに http:// が含まれている → カバー不能な異常値です
+				throw new Exception('INSTANCE_URL の指定が異常値です。');
+			}
+			else {
+				// それ以外の条件は存在しない
 			}
 
 			// 末尾が スラッシュ で終わっていないこと。終わっているなら削除する。
