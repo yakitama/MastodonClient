@@ -20,6 +20,9 @@ class MastodonClient {
 	private $error = FALSE;
 	private $instance_baseurl = NULL;
 	private $instance_apiurl = array();
+	private $api_client_key = NULL;
+	private $api_client_secret = NULL;
+	private $api_access_token = NULL;
 
 	public function __construct ()
 	{
@@ -30,7 +33,15 @@ class MastodonClient {
 		// ----- ●インスタンス URL のバリデーション -----
 		$this->instance_baseurl = $this->validate_instance_url(INSTANCE_URL);
 		if ( $this->instance_baseurl === FALSE ) {
-			$error = TRUE;
+			$this->error = TRUE;
+		}
+
+		// ----- ●Client Key とかの簡易バリデーション -----
+		$this->api_client_key = CLIENT_KEY;
+		$this->api_client_secret = CLIENT_SECRET;
+		$this->api_access_token = ACCESS_TOKEN;
+		if ( $this->validate_tokens($this->api_client_key, $this->api_client_secret, $this->api_access_token) === FALSE ) {
+			$this->error = TRUE;
 		}
 
 		// ----- ●API URL を作成する -----
@@ -82,5 +93,34 @@ class MastodonClient {
 		}
 
 		return $instance_url_novalidate;
+	}
+
+	// function		validate_tokens
+	// 概要			引数に指定された文字列がインスタンス URL として正常か検査します。
+	// 引数			$client_key		検査したい文字列を指定します。
+	// 				$cleint_secret	検査したい文字列を指定します。
+	// 				$access_token	検査したい文字列を指定します。
+	// 戻り値		異常であれば FALSE を返します。正常であれば TRUE を返します。。
+	// 制約			
+	private function validate_tokens ( string $client_key, string $cleint_secret, string $access_token )
+	{
+		try {
+			// いずれかの文字列の長さが 0 だったらエラー
+			if ( strlen($client_key) == 0 ) {
+				throw new Exception('CLIENT_KEY の指定が異常値です。');
+			}
+			if ( strlen($cleint_secret) == 0 ) {
+				throw new Exception('CLIENT_SECRET の指定が異常値です。');
+			}
+			if ( strlen($access_token) == 0 ) {
+				throw new Exception('ACCESS_TOKEN の指定が異常値です。');
+			}
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+
+		return TRUE;
 	}
 }
