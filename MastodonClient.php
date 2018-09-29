@@ -26,29 +26,43 @@ class MastodonClient {
 
 	public function __construct ()
 	{
-		$construct_execution_error = FALSE;
-
-		require_once('settings.php');
-
-		// ----- ●インスタンス URL のバリデーション -----
-		$this->instance_baseurl = $this->validate_instance_url(INSTANCE_URL);
-		if ( $this->instance_baseurl === FALSE ) {
-			$this->error = TRUE;
-		}
-
-		// ----- ●Client Key とかの簡易バリデーション -----
-		$this->api_client_key = CLIENT_KEY;
-		$this->api_client_secret = CLIENT_SECRET;
-		$this->api_access_token = ACCESS_TOKEN;
-		if ( $this->validate_tokens($this->api_client_key, $this->api_client_secret, $this->api_access_token) === FALSE ) {
-			$this->error = TRUE;
-		}
-
 		// ----- ●API URL を作成する -----
 		require_once('api_defines.php');
 		$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 	}
 
+	// function		init
+	// 概要			インスタンスの初期設定をおこないます。
+	// 引数			なし
+	// 戻り値		異常であれば FALSE を返します。正常であれば TRUE を返します。
+	// 制約			
+	public function init ()
+	{
+		try {
+			require_once('settings.php');
+
+			// ----- ●インスタンス URL のバリデーション -----
+			$this->instance_baseurl = $this->validate_instance_url(INSTANCE_URL);
+			if ( $this->instance_baseurl === FALSE ) {
+				throw new Exception('初期設定に失敗しました。');
+			}
+	
+			// ----- ●Client Key とかの簡易バリデーション -----
+			$this->api_client_key = CLIENT_KEY;
+			$this->api_client_secret = CLIENT_SECRET;
+			$this->api_access_token = ACCESS_TOKEN;
+			if ( $this->validate_tokens($this->api_client_key, $this->api_client_secret, $this->api_access_token) === FALSE ) {
+				throw new Exception('初期設定に失敗しました。');
+			}
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, $e->getMessage().PHP_EOL);
+			$this->error = TRUE;
+			return FALSE;
+		}
+
+		return TRUE;
+	}
 
 	// function		validate_instance_url
 	// 概要			引数に指定された文字列がインスタンス URL として正常か検査します。
@@ -100,7 +114,7 @@ class MastodonClient {
 	// 引数			$client_key		検査したい文字列を指定します。
 	// 				$cleint_secret	検査したい文字列を指定します。
 	// 				$access_token	検査したい文字列を指定します。
-	// 戻り値		異常であれば FALSE を返します。正常であれば TRUE を返します。。
+	// 戻り値		異常であれば FALSE を返します。正常であれば TRUE を返します。
 	// 制約			
 	private function validate_tokens ( string $client_key, string $cleint_secret, string $access_token )
 	{
