@@ -61,6 +61,7 @@ class MastodonClient {
 			// ----- ●API URL を作成する -----
 			require_once('api_defines.php');
 			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
+			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
 		}
 		catch (Exception $e) {
 			fprintf(STDERR, $e->getMessage().PHP_EOL);
@@ -113,6 +114,43 @@ class MastodonClient {
 			return FALSE;
 		}
 		
+	}
+
+	// function		get_federation_timeline
+	// 概要			FTL を取得します。
+	// 引数			$count						取得件数を指定します。指定しない場合 50 件になります。
+	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。指定しない場合 FALSE になります。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
+	// 制約
+	public function get_federation_timeline ( $count = 50, $media_only = FALSE )
+	{
+		try {
+			// パラメータの作成
+			$params = array();
+			$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
+			$params['limit'] = $count;
+
+			// URL の作成
+			$access_url = $this->instance_apiurl['timelines']['public'];
+			$is_first_param = TRUE;
+			foreach ( $params as $param => $value ) {
+				if ( $is_first_param === TRUE ) {
+					$access_url .= '?';
+					$is_first_param = FALSE;
+				} else {
+					$access_url .= '&';
+				}
+				$access_url .= $param . "=" . $value;
+			}
+
+			// GET リクエスト発行
+			$json = json_decode(file_get_contents($access_url), TRUE);
+			return $json;
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
 	}
 
 	// function		validate_instance_url
