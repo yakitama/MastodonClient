@@ -122,13 +122,21 @@ class MastodonClient {
 	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。指定しない場合 FALSE になります。
 	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
 	// 制約
-	public function get_federation_timeline ( $count = 50, $media_only = FALSE )
+	public function get_federation_timeline ( $count = 50, $start_id = NULL, $get_newer = FALSE, $media_only = FALSE )
 	{
 		try {
 			// パラメータの作成
 			$params = array();
 			$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
 			$params['limit'] = $count;
+			if ( $start_id != NULL ) {
+				if ( $get_newer ) {
+					$params['since_id'] = $start_id;
+				}
+				else {
+					$params['max_id'] = $start_id;
+				}
+			}
 
 			// URL の作成
 			$access_url = $this->instance_apiurl['timelines']['public'];
