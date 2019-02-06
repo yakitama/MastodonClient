@@ -129,6 +129,19 @@ class MastodonClient {
 		return $this->get_public_timeline(FALSE, $count, $start_id, $get_newer, $media_only);
 	}
 
+	// function		get_local_timeline
+	// 概要			LTL を取得します。
+	// 引数			$count						取得件数を指定します。指定しない場合 50 件になります。
+	// 				$start_id					ページめくりをするときは、その基準となるトゥート ID を指定します。
+	//				$get_newer					より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
+	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。指定しない場合 FALSE になります。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
+	// 制約
+	public function get_local_timeline ( $count = 50, $start_id = NULL, $get_newer = FALSE, $media_only = FALSE )
+	{
+		return $this->get_public_timeline(TRUE, $count, $start_id, $get_newer, $media_only);
+	}
+
 	// function		validate_instance_url
 	// 概要			引数に指定された文字列がインスタンス URL として正常か検査します。
 	// 引数			$instance_url_novalidate	検査したい文字列を指定します。
