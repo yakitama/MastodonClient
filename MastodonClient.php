@@ -126,41 +126,7 @@ class MastodonClient {
 	// 制約
 	public function get_federation_timeline ( $count = 50, $start_id = NULL, $get_newer = FALSE, $media_only = FALSE )
 	{
-		try {
-			// パラメータの作成
-			$params = array();
-			$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
-			$params['limit'] = $count;
-			if ( $start_id != NULL ) {
-				if ( $get_newer ) {
-					$params['since_id'] = $start_id;
-				}
-				else {
-					$params['max_id'] = $start_id;
-				}
-			}
-
-			// URL の作成
-			$access_url = $this->instance_apiurl['timelines']['public'];
-			$is_first_param = TRUE;
-			foreach ( $params as $param => $value ) {
-				if ( $is_first_param === TRUE ) {
-					$access_url .= '?';
-					$is_first_param = FALSE;
-				} else {
-					$access_url .= '&';
-				}
-				$access_url .= $param . "=" . $value;
-			}
-
-			// GET リクエスト発行
-			$json = json_decode(file_get_contents($access_url), TRUE);
-			return $json;
-		}
-		catch (Exception $e) {
-			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
-			return FALSE;
-		}
+		return $this->get_public_timeline(FALSE, $count, $start_id, $get_newer, $media_only);
 	}
 
 	// function		validate_instance_url
@@ -265,5 +231,56 @@ class MastodonClient {
 		}
 
 		return TRUE;
+	}
+
+	// function		get_public_timeline
+	// 概要			公開タイムラインを取得します。
+	// 引数			$local						ローカルトゥートのみを取得します（ローカルタイムライン）。
+	// 				$count						取得件数を指定します。
+	// 				$start_id					ページめくりをするときは、その基準となるトゥート ID を指定します。先頭から取得する場合は NULL を指定します。
+	//				$get_newer					より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
+	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
+	// 制約
+	private function get_public_timeline ( $local, $count, $start_id, $get_newer, $media_only )
+	{
+		try {
+			// パラメータの作成
+			$params = array();
+			$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
+			$params['limit'] = $count;
+			if ( $start_id != NULL ) {
+				if ( $get_newer ) {
+					$params['since_id'] = $start_id;
+				}
+				else {
+					$params['max_id'] = $start_id;
+				}
+			}
+			if ( $local ) {
+				$params['local'] = 'true';
+			}
+
+			// URL の作成
+			$access_url = $this->instance_apiurl['timelines']['public'];
+			$is_first_param = TRUE;
+			foreach ( $params as $param => $value ) {
+				if ( $is_first_param === TRUE ) {
+					$access_url .= '?';
+					$is_first_param = FALSE;
+				} else {
+					$access_url .= '&';
+				}
+				$access_url .= $param . "=" . $value;
+			}
+
+			// GET リクエスト発行
+			$json = json_decode(file_get_contents($access_url), TRUE);
+			return $json;
+		}
+		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
 	}
 }
