@@ -81,10 +81,12 @@ class MastodonClient {
 	// 概要			トゥートします。
 	// 引数			$visibility					公開範囲を指定します。VISIBILITY_ なんちゃらを使ってください。
 	// 				$status						本文を指定します。
-	// 				$spoiler_text				警告文を指定します。省略できます。この引数に1文字以上の文字列を指定すると、自動で CW フラグが設定されます。
+	// 				$options					オプションを連想配列で指定できます。
+	// 											spoiler_text に警告文を指定します。1 文字以上の文字列を指定することで CW フラグが設定されます。
+	// 											scheduled_at に予約投稿時刻を指定します。DateTime クラスオブジェクトを指定してください。
 	// 戻り値		異常であれば FALSE を返します。それ以外の場合、作成したステータスの URL を返します。
 	// 制約			
-	public function post_statuses ( $visibility, string $status, string $spoiler_text = "" )
+	public function post_statuses ( $visibility, string $status, array $options = array() )
 	{
 		try {
 			// visibility のエラーチェック
@@ -100,8 +102,8 @@ class MastodonClient {
 			$payload = array();
 			$payload['status'] = $status;
 			$payload['visibility'] = $visibility;
-			if ( mb_strlen($spoiler_text) > 0 ) {
-				$payload['spoiler_text'] = $spoiler_text;
+			if ( isset($options['spoiler_text']) && (mb_strlen($options['spoiler_text']) > 0) ) {
+				$payload['spoiler_text'] = $options['spoiler_text'];
 			}
 
 			// cURL による POST リクエスト発行
@@ -118,7 +120,6 @@ class MastodonClient {
 			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
 			return FALSE;
 		}
-		
 	}
 
 	// function		validate_instance_url
