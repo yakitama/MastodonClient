@@ -105,6 +105,9 @@ class MastodonClient {
 			if ( isset($options['spoiler_text']) && (mb_strlen($options['spoiler_text']) > 0) ) {
 				$payload['spoiler_text'] = $options['spoiler_text'];
 			}
+			if ( isset($options['scheduled_at']) ) {
+				$payload['scheduled_at'] = $options['scheduled_at']->format(DateTime::ATOM);
+			}
 
 			// cURL による POST リクエスト発行
 			$curl_instance = curl_init($this->instance_apiurl['statuses']);
