@@ -23,6 +23,10 @@ class MastodonClient {
 	const VISIBILITY_PRIVATE = 'private';
 	const VISIBILITY_DIRECT = 'direct';
 
+	const TIMELINE_TYPE_HOME = 1;
+	const TIMELINE_TYPE_FEDERATION = 2;
+	const TIMELINE_TYPE_LOCAL = 3;
+
 	private $error = FALSE;
 	private $instance_baseurl = NULL;
 	private $instance_apiurl = array();
@@ -61,6 +65,7 @@ class MastodonClient {
 			// ----- ●API URL を作成する -----
 			require_once('api_defines.php');
 			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
+			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
 			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
 		}
 		catch (Exception $e) {
@@ -114,32 +119,6 @@ class MastodonClient {
 			return FALSE;
 		}
 		
-	}
-
-	// function		get_federation_timeline
-	// 概要			FTL を取得します。
-	// 引数			$count						取得件数を指定します。指定しない場合 50 件になります。
-	// 				$start_id					ページめくりをするときは、その基準となるトゥート ID を指定します。
-	//				$get_newer					より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
-	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。指定しない場合 FALSE になります。
-	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
-	// 制約
-	public function get_federation_timeline ( $count = 50, $start_id = NULL, $get_newer = FALSE, $media_only = FALSE )
-	{
-		return $this->get_public_timeline(FALSE, $count, $start_id, $get_newer, $media_only);
-	}
-
-	// function		get_local_timeline
-	// 概要			LTL を取得します。
-	// 引数			$count						取得件数を指定します。指定しない場合 50 件になります。
-	// 				$start_id					ページめくりをするときは、その基準となるトゥート ID を指定します。
-	//				$get_newer					より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
-	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。指定しない場合 FALSE になります。
-	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
-	// 制約
-	public function get_local_timeline ( $count = 50, $start_id = NULL, $get_newer = FALSE, $media_only = FALSE )
-	{
-		return $this->get_public_timeline(TRUE, $count, $start_id, $get_newer, $media_only);
 	}
 
 	// function		validate_instance_url
@@ -246,21 +225,35 @@ class MastodonClient {
 		return TRUE;
 	}
 
-	// function		get_public_timeline
-	// 概要			公開タイムラインを取得します。
-	// 引数			$local						ローカルトゥートのみを取得します（ローカルタイムライン）。
+	// function		get_timeline
+	// 概要			タイムラインを取得する共通関数です。
+	// 引数			$type						タイムライン種別を指定します（必須）。定義してる固定値を使ってください。
 	// 				$count						取得件数を指定します。
 	// 				$start_id					ページめくりをするときは、その基準となるトゥート ID を指定します。先頭から取得する場合は NULL を指定します。
 	//				$get_newer					より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
 	// 				$media_only					メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。
 	// 戻り値		異常であれば FALSE を返します。それ以外の場合、タイムラインのトゥートを適当に配列として返します。
 	// 制約
-	private function get_public_timeline ( $local, $count, $start_id, $get_newer, $media_only )
-	{
+	public function get_timeline ( int $type, bool $media_only = FALSE, int $count = 50, int $start_id = NULL, bool $get_newer = FALSE ) {
+		// 入力値のチェック
+		try {
+			if ( ($type !== $this::TIMELINE_TYPE_HOME) &&
+				 ($type !== $this::TIMELINE_TYPE_FEDERATION) &&
+				 ($type !== $this::TIMELINE_TYPE_LOCAL)
+			) {
+				throw new Exception();
+			}
+			if ( ($count > 400) || ($count < 1) ) {
+				throw new Exception();
+			}
+		}
+		catch ( Exception $e ) {
+			return FALSE;
+		}
+
 		try {
 			// パラメータの作成
 			$params = array();
-			$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
 			$params['limit'] = $count;
 			if ( $start_id != NULL ) {
 				if ( $get_newer ) {
@@ -270,12 +263,26 @@ class MastodonClient {
 					$params['max_id'] = $start_id;
 				}
 			}
-			if ( $local ) {
-				$params['local'] = 'true';
+
+			// 取得するタイムラインごとに異なるパラメータをここで設定する
+			switch ( $type ) {
+				case $this::TIMELINE_TYPE_HOME:
+					$access_url = $this->instance_apiurl['timelines']['home'];
+					break;
+				case $this::TIMELINE_TYPE_FEDERATION:
+					$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
+					$access_url = $this->instance_apiurl['timelines']['public'];
+					break;
+				case $this::TIMELINE_TYPE_LOCAL:
+					$params['only_media'] = ($media_only === TRUE) ? 'true' : 'false';
+					$access_url = $this->instance_apiurl['timelines']['public'];
+					$params['local'] = 'true';
+					break;
+				default:
+					break;
 			}
 
-			// URL の作成
-			$access_url = $this->instance_apiurl['timelines']['public'];
+			// パラメータと組み合わせて API URL を作成する
 			$is_first_param = TRUE;
 			foreach ( $params as $param => $value ) {
 				if ( $is_first_param === TRUE ) {
@@ -287,8 +294,15 @@ class MastodonClient {
 				$access_url .= $param . "=" . $value;
 			}
 
-			// GET リクエスト発行
-			$json = json_decode(file_get_contents($access_url), TRUE);
+			// cURL による GET リクエスト発行
+			$curl_instance = curl_init($access_url);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+			if ( ($result = curl_exec($curl_instance)) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);
+			$json = json_decode($result, TRUE);
 			return $json;
 		}
 		catch (Exception $e) {
