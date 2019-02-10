@@ -65,6 +65,7 @@ class MastodonClient {
 			// ----- ●API URL を作成する -----
 			require_once('api_defines.php');
 			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
+			$this->instance_apiurl['scheduled_statuses'] = $this->instance_baseurl.APIURL_SCHEDULED_STATUSES;
 			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
 			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
 		}
@@ -310,6 +311,35 @@ class MastodonClient {
 			return $json;
 		}
 		catch (Exception $e) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+	}
+
+	// function		get_scheduled_status
+	// 概要			予約投稿のリストを取得します
+	// 引数			$id							特定の予約投稿についての情報を取得するなら指定してください。未指定の場合、全件取得します。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、トゥートの配列を返します。
+	// 制約
+	public function get_scheduled_status ( $id = NULL )
+	{
+		try {
+			// cURL による GET リクエスト発行
+			$access_url = $this->instance_apiurl['scheduled_statuses'];
+			if ( $id !== NULL ) {
+				$access_url .= '/'.$id;
+			}
+			$curl_instance = curl_init($access_url);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+			if ( ($result = curl_exec($curl_instance)) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);
+			$json = json_decode($result, TRUE);
+			return $json;
+		}
+		catch ( Exception $e ) {
 			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
 			return FALSE;
 		}
