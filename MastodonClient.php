@@ -344,4 +344,30 @@ class MastodonClient {
 			return FALSE;
 		}
 	}
+
+	// function		delete_scheduled_status
+	// 概要			予約投稿を削除します
+	// 引数			$id							削除する予約投稿の ID を指定してください。
+	// 戻り値		成功したら TRUE を、失敗したら FALSE を返します。
+	// 制約
+	public function delete_scheduled_status ( $id )
+	{
+		try {
+			// cURL による GET リクエスト発行
+			$access_url = $this->instance_apiurl['scheduled_statuses'];
+			$access_url .= '/'.$id;
+			$curl_instance = curl_init($access_url);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_setopt($curl_instance, CURLOPT_CUSTOMREQUEST, "DELETE");
+			if ( ($result = curl_exec($curl_instance)) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);
+		}
+		catch ( Exception $e ) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+	}
 }
