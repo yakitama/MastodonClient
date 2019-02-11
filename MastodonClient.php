@@ -68,6 +68,7 @@ class MastodonClient {
 			$this->instance_apiurl['scheduled_statuses'] = $this->instance_baseurl.APIURL_SCHEDULED_STATUSES;
 			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
 			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
+			$this->instance_apiurl['accounts']['statuses'] = $this->instance_baseurl.APIURL_ACCOUNT_STATUSES;
 		}
 		catch (Exception $e) {
 			fprintf(STDERR, $e->getMessage().PHP_EOL);
@@ -364,6 +365,81 @@ class MastodonClient {
 				throw new Exception(curl_error($curl_instance));
 			}
 			curl_close($curl_instance);
+		}
+		catch ( Exception $e ) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+	}
+
+	// function		get_account_statuses
+	// 概要			とあるユーザーのトゥートを取得する API です。
+	// 引数			$id							取得するユーザーのアカウント ID を指定します。
+	// 				$options					オプションを指定できます。
+	// 					['limit']				取得件数を指定します。
+	// 					['start_id']			ページめくりをするときは、その基準となるトゥート ID を指定します。先頭から取得する場合は NULL を指定します。
+	//					['get_newer']			より新しいトゥートを取得するときは TRUE を、より古いトゥートを取得するときは FALSE を指定します。
+	// 					['media_only']			メディア添付のあるトゥートだけを取得したい場合 TRUE を指定します。
+	// 					['exclude_reblogs']		ブーストしたトゥートを除外します。
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、トゥートを適当に配列として返します。
+	// 制約
+	public function get_account_statuses ( int $id, array $options = array() )
+	{
+		try {
+			// cURL による GET リクエスト発行
+			$access_url = $this->instance_apiurl['accounts']['statuses'];
+			$access_url = str_replace(':id', $id, $access_url);
+			if ( count($options) > 0 ) {
+				// 型変換とかやる
+				$params = array();
+				foreach ( $options as $param => $value ) {
+					switch ( $param ) {
+						case 'count':
+							$params['limit'] = $value;
+							break;
+						case 'start_id':
+							if ( isset($options['get_newer']) && $options['get_newer'] ) {
+								$params['min_id'] = $value;
+							}
+							else {
+								$params['max_id'] = $value;
+							}
+							break;
+						case 'media_only':
+							if ( $value ) {
+								$params['only_media'] = 'true';
+							}
+							break;
+						case 'exclude_reblogs':
+							if ( $value ) {
+								$params['exclude_reblogs'] = 'true';
+							}
+							break;
+						default:
+							break;
+					}
+				}
+
+				$is_first_param = TRUE;
+				foreach ( $params as $param => $value ) {
+					if ( $is_first_param === TRUE ) {
+						$access_url .= '?';
+						$is_first_param = FALSE;
+					} else {
+						$access_url .= '&';
+					}
+					$access_url .= $param . "=" . $value;
+				}
+			}
+			$curl_instance = curl_init($access_url);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+			if ( ($result = curl_exec($curl_instance)) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);
+			$json = json_decode($result, TRUE);
+			return $json;
 		}
 		catch ( Exception $e ) {
 			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
