@@ -69,6 +69,7 @@ class MastodonClient {
 			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
 			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
 			$this->instance_apiurl['accounts']['statuses'] = $this->instance_baseurl.APIURL_ACCOUNT_STATUSES;
+			$this->instance_apiurl['accounts']['verify_credential'] = $this->instance_baseurl.APIURL_ACCOUNT_CREDENTIAL;
 		}
 		catch (Exception $e) {
 			fprintf(STDERR, $e->getMessage().PHP_EOL);
@@ -431,6 +432,31 @@ class MastodonClient {
 					$access_url .= $param . "=" . $value;
 				}
 			}
+			$curl_instance = curl_init($access_url);
+			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+			if ( ($result = curl_exec($curl_instance)) === FALSE ) {
+				throw new Exception(curl_error($curl_instance));
+			}
+			curl_close($curl_instance);
+			$json = json_decode($result, TRUE);
+			return $json;
+		}
+		catch ( Exception $e ) {
+			fprintf(STDERR, 'ERROR at '.__FUNCTION__.': '.$e->getMessage().PHP_EOL);
+			return FALSE;
+		}
+	}
+
+	// function		get_my_account_info
+	// 概要			自分のユーザーの情報を取得します
+	// 引数
+	// 戻り値		異常であれば FALSE を返します。それ以外の場合、アカウント情報を配列として返します。
+	// 制約
+	public function get_my_account_info ()
+	{
+		try {
+			$access_url = $this->instance_apiurl['accounts']['verify_credential'];
 			$curl_instance = curl_init($access_url);
 			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
 			curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
