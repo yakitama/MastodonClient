@@ -46,7 +46,7 @@ class MastodonClient {
 	public function init ()
 	{
 		try {
-			require_once('settings.php');
+			require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'settings.php');
 
 			// ----- ●インスタンス URL のバリデーション -----
 			$this->instance_baseurl = $this->validate_instance_url(INSTANCE_URL);
@@ -63,7 +63,7 @@ class MastodonClient {
 			}
 			
 			// ----- ●API URL を作成する -----
-			require_once('api_defines.php');
+			require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'api_defines.php');
 			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 			$this->instance_apiurl['scheduled_statuses'] = $this->instance_baseurl.APIURL_SCHEDULED_STATUSES;
 			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
