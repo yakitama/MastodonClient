@@ -66,6 +66,7 @@ class MastodonClient {
 			require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'api_defines.php');
 			$this->instance_apiurl['statuses'] = $this->instance_baseurl.APIURL_STATUSES;
 			$this->instance_apiurl['scheduled_statuses'] = $this->instance_baseurl.APIURL_SCHEDULED_STATUSES;
+			$this->instance_apiurl['media_attachment'] = $this->instance_baseurl.APIURL_MEDIA_ATTACHMENT;
 			$this->instance_apiurl['timelines']['home'] = $this->instance_baseurl.APIURL_TIMELINES_HOME;
 			$this->instance_apiurl['timelines']['public'] = $this->instance_baseurl.APIURL_TIMELINES_PUBLIC;
 			$this->instance_apiurl['accounts']['statuses'] = $this->instance_baseurl.APIURL_ACCOUNT_STATUSES;
@@ -87,6 +88,7 @@ class MastodonClient {
 	// 				$options					オプションを連想配列で指定できます。
 	// 											spoiler_text に警告文を指定します。1 文字以上の文字列を指定することで CW フラグが設定されます。
 	// 											scheduled_at に予約投稿時刻を指定します。DateTime クラスオブジェクトを指定してください。
+	// 											attachments に 4 つまで添付したい画像のファイルパスを含めることができます。
 	// 戻り値		異常であれば FALSE を返します。それ以外の場合、作成したステータスの URL を返します。
 	// 制約			
 	public function post_statuses ( $visibility, string $status, array $options = array() )
@@ -100,6 +102,38 @@ class MastodonClient {
 			if ( mb_strlen($status) == 0 ) {
 				throw new Exception('投稿テキストに誤りがあります。');
 			}
+			// 添付ファイルが配列になっているか
+			if ( isset($options['attachments']) && !is_array($options['attachments']) ) {
+				throw new Exception('添付ファイルは1つでも配列で指定してください。');
+			}
+
+			// 添付ファイルが指定されている場合は、まずその画像をアップロード
+			if ( isset($options['attachments']) ) {
+				$media_ids = array();
+				foreach ( $options['attachments'] as $media_filepath ) {
+					$payload = array();
+					$cfile = new CURLFile($media_filepath);
+					$payload['file'] = $cfile;
+
+					$curl_instance = curl_init($this->instance_apiurl['media_attachment']);
+					curl_setopt($curl_instance, CURLOPT_POST, TRUE);
+					curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
+					curl_setopt($curl_instance, CURLOPT_POSTFIELDS, $payload);
+					curl_setopt($curl_instance, CURLOPT_RETURNTRANSFER, TRUE);
+					if ( ($response_json = curl_exec($curl_instance)) === FALSE ) {
+						fprintf(STDERR, 'Warning at '.__FUNCTION__.': ファイルのアップロードに失敗しました。'.PHP_EOL);
+						continue;
+					}
+					curl_close($curl_instance);
+
+					$response = json_decode($response_json, TRUE);
+					if ( $response['type'] != 'unknown' ) {
+						$media_ids[] = $response['id'];
+						fprintf(STDERR, "ファイルアップロードできたよ！ media_id: ". $response['id'].PHP_EOL);
+					}
+				}
+			}
+			
 
 			// ペイロードの作成
 			$payload = array();
@@ -111,12 +145,18 @@ class MastodonClient {
 			if ( isset($options['scheduled_at']) ) {
 				$payload['scheduled_at'] = $options['scheduled_at']->format(DateTime::ATOM);
 			}
+			$payload_query = http_build_query($payload);
+			if ( isset($media_ids) && (count($media_ids) > 0) ) {
+				foreach ( $media_ids as $media_id ) {
+					$payload_query .= '&media_ids[]='.$media_id;
+				}
+			}
 
 			// cURL による POST リクエスト発行
 			$curl_instance = curl_init($this->instance_apiurl['statuses']);
 			curl_setopt($curl_instance, CURLOPT_POST, TRUE);
 			curl_setopt($curl_instance, CURLOPT_HTTPHEADER, array("Authorization: Bearer ".$this->api_access_token));
-			curl_setopt($curl_instance, CURLOPT_POSTFIELDS, $payload);
+			curl_setopt($curl_instance, CURLOPT_POSTFIELDS, $payload_query);
 			if ( curl_exec($curl_instance) === FALSE ) {
 				throw new Exception(curl_error($curl_instance));
 			}
